@@ -3,12 +3,14 @@ package github.javaguide.remoting.handler;
 import github.javaguide.exception.RpcException;
 import github.javaguide.factory.SingletonFactory;
 import github.javaguide.provider.ServiceProvider;
-import github.javaguide.provider.impl.ZkServiceProviderImpl;
+import github.javaguide.provider.impl.ServiceProviderImpl;
 import github.javaguide.remoting.dto.RpcRequest;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import org.springframework.stereotype.Component;
 
 /**
  * RpcRequest processor
@@ -18,10 +20,11 @@ import java.lang.reflect.Method;
  */
 @Slf4j
 public class RpcRequestHandler {
-    private final ServiceProvider serviceProvider;
+
+    private ServiceProvider serviceProvider;
 
     public RpcRequestHandler() {
-        serviceProvider = SingletonFactory.getInstance(ZkServiceProviderImpl.class);
+        serviceProvider = SingletonFactory.getInstance(ServiceProviderImpl.class);
     }
 
     /**

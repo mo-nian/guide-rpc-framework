@@ -1,1 +1,2 @@
 zk=github.javaguide.registry.zk.ZkServiceRegistryImpl
+nacos=github.javaguide.registry.nacos.NacosServiceRegistryImpl

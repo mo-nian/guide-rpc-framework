@@ -50,8 +50,9 @@ public final class CuratorUtils {
             if (REGISTERED_PATH_SET.contains(path) || zkClient.checkExists().forPath(path) != null) {
                 log.info("The node already exists. The node is:[{}]", path);
             } else {
-                //eg: /my-rpc/github.javaguide.HelloService/127.0.0.1:9999
-                zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
+                //eg: /my-rpc/github.javaguide.HelloServicetest1version1/127.0.0.1:9998
+                // 创建zookeeper节点
+                zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path);
                 log.info("The node was created successfully. The node is:[{}]", path);
             }
             REGISTERED_PATH_SET.add(path);
@@ -62,8 +63,9 @@ public final class CuratorUtils {
 
     /**
      * Gets the children under a node
+     * 获取节点下子节点 （注册路径和端口）
      *
-     * @param rpcServiceName rpc service name eg:github.javaguide.HelloServicetest2version1
+     * @param rpcServiceName rpc service name eg:github.javaguide.HelloServicetest1version1
      * @return All child nodes under the specified node
      */
     public static List<String> getChildrenNodes(CuratorFramework zkClient, String rpcServiceName) {
@@ -98,10 +100,11 @@ public final class CuratorUtils {
         log.info("All registered services on the server are cleared:[{}]", REGISTERED_PATH_SET.toString());
     }
 
-    public static CuratorFramework getZkClient() {
+    public static CuratorFramework getZkClient(String registerAddress) {
         // check if user has set zk address
-        Properties properties = PropertiesFileUtil.readPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
-        String zookeeperAddress = properties != null && properties.getProperty(RpcConfigEnum.ZK_ADDRESS.getPropertyValue()) != null ? properties.getProperty(RpcConfigEnum.ZK_ADDRESS.getPropertyValue()) : DEFAULT_ZOOKEEPER_ADDRESS;
+//        Properties properties = PropertiesFileUtil.readPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+//        String zookeeperAddress = properties != null && properties.getProperty(RpcConfigEnum.ZK_ADDRESS.getPropertyValue()) != null ? properties.getProperty(RpcConfigEnum.ZK_ADDRESS.getPropertyValue()) : DEFAULT_ZOOKEEPER_ADDRESS;
+        String zookeeperAddress = null == registerAddress ? DEFAULT_ZOOKEEPER_ADDRESS : registerAddress;
         // if zkClient has been started, return directly
         if (zkClient != null && zkClient.getState() == CuratorFrameworkState.STARTED) {
             return zkClient;
@@ -128,7 +131,7 @@ public final class CuratorUtils {
     /**
      * Registers to listen for changes to the specified node
      *
-     * @param rpcServiceName rpc service name eg:github.javaguide.HelloServicetest2version
+     * @param rpcServiceName rpc service name eg:github.javaguide.HelloServicetest1version1
      */
     private static void registerWatcher(String rpcServiceName, CuratorFramework zkClient) throws Exception {
         String servicePath = ZK_REGISTER_ROOT_PATH + "/" + rpcServiceName;

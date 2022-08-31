@@ -27,4 +27,13 @@ public enum SerializationTypeEnum {
         return null;
     }
 
+    public static byte getCodeByName(String name) {
+        for (SerializationTypeEnum c : SerializationTypeEnum.values()) {
+            if (c.getName().equals(name)) {
+                return c.code;
+            }
+        }
+        return SerializationTypeEnum.HESSIAN.code;
+    }
+
 }

@@ -2,17 +2,23 @@ package github.javaguide.spring;
 
 import github.javaguide.annotation.RpcReference;
 import github.javaguide.annotation.RpcService;
+import github.javaguide.config.RpcRegistryConfig;
 import github.javaguide.config.RpcServiceConfig;
 import github.javaguide.extension.ExtensionLoader;
 import github.javaguide.factory.SingletonFactory;
 import github.javaguide.provider.ServiceProvider;
-import github.javaguide.provider.impl.ZkServiceProviderImpl;
+import github.javaguide.provider.impl.ServiceProviderImpl;
 import github.javaguide.proxy.RpcClientProxy;
 import github.javaguide.remoting.transport.RpcRequestTransport;
+import github.javaguide.utils.SpringUtil;
+import javax.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
@@ -25,16 +31,18 @@ import java.lang.reflect.Field;
  */
 @Slf4j
 @Component
-public class SpringBeanPostProcessor implements BeanPostProcessor {
+public class SpringBeanPostProcessor implements BeanPostProcessor, ApplicationContextAware {
 
-    private final ServiceProvider serviceProvider;
+    private ServiceProvider serviceProvider;
+
     private final RpcRequestTransport rpcClient;
 
-    public SpringBeanPostProcessor() {
-        this.serviceProvider = SingletonFactory.getInstance(ZkServiceProviderImpl.class);
-        this.rpcClient = ExtensionLoader.getExtensionLoader(RpcRequestTransport.class).getExtension("netty");
+    @Autowired
+    public SpringBeanPostProcessor(RpcRegistryConfig rpcRegistryConfig) {
+        this.rpcClient = ExtensionLoader.getExtensionLoader(RpcRequestTransport.class).getExtension(rpcRegistryConfig.getTransport());
     }
 
+    // 自己不会调用自己的postProcessBeforeInitialization方法
     @SneakyThrows
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -74,5 +82,11 @@ public class SpringBeanPostProcessor implements BeanPostProcessor {
 
         }
         return bean;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        SpringUtil.setApplicationContext(applicationContext);
+        this.serviceProvider = SingletonFactory.getInstance(ServiceProviderImpl.class);
     }
 }

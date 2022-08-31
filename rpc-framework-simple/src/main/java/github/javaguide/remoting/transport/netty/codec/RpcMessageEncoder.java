@@ -54,10 +54,12 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
             byte messageType = rpcMessage.getMessageType();
             out.writeByte(messageType);
             out.writeByte(rpcMessage.getCodec());
-            out.writeByte(CompressTypeEnum.GZIP.getCode());
+            out.writeByte(rpcMessage.getCompress());
+            // requestId
             out.writeInt(ATOMIC_INTEGER.getAndIncrement());
             // build full length
             byte[] bodyBytes = null;
+            // 16
             int fullLength = RpcConstants.HEAD_LENGTH;
             // if messageType is not heartbeat message,fullLength = head length + body length
             if (messageType != RpcConstants.HEARTBEAT_REQUEST_TYPE
@@ -65,6 +67,7 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
                 // serialize the object
                 String codecName = SerializationTypeEnum.getName(rpcMessage.getCodec());
                 log.info("codec name: [{}] ", codecName);
+                // 序列化
                 Serializer serializer = ExtensionLoader.getExtensionLoader(Serializer.class)
                         .getExtension(codecName);
                 bodyBytes = serializer.serialize(rpcMessage.getData());
@@ -72,6 +75,7 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
                 String compressName = CompressTypeEnum.getName(rpcMessage.getCompress());
                 Compress compress = ExtensionLoader.getExtensionLoader(Compress.class)
                         .getExtension(compressName);
+                // 压缩字节数组
                 bodyBytes = compress.compress(bodyBytes);
                 fullLength += bodyBytes.length;
             }
@@ -80,8 +84,11 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
                 out.writeBytes(bodyBytes);
             }
             int writeIndex = out.writerIndex();
+            // 定位到full length位置
             out.writerIndex(writeIndex - fullLength + RpcConstants.MAGIC_NUMBER.length + 1);
+            // 写长度
             out.writeInt(fullLength);
+            // 复原
             out.writerIndex(writeIndex);
         } catch (Exception e) {
             log.error("Encode request error!", e);

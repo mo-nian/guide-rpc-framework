@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @author shuang.kou
  * @createTime 2020年05月10日 07:52:00
+ * BeanPostProcessor处理@RpcService注解，调用serviceProvider.publishService()发布到注册中心
  */
 @Slf4j
 @RpcService(group = "test1", version = "version1")

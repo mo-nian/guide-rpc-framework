@@ -1,1 +1,2 @@
-loadBalance=github.javaguide.loadbalance.loadbalancer.ConsistentHashLoadBalance
+consistent=github.javaguide.loadbalance.loadbalancer.ConsistentHashLoadBalance
+random=github.javaguide.loadbalance.loadbalancer.RandomLoadBalance

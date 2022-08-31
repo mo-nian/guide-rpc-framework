@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class HelloController {
 
+    /**
+     * BeanPostProcessor后置处理器set代理对象
+     * 代理对象会向server发送网络请求
+     */
     @RpcReference(version = "version1", group = "test1")
     private HelloService helloService;
 

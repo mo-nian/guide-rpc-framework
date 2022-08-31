@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
 
-    private final RpcRequestHandler rpcRequestHandler;
+    private RpcRequestHandler rpcRequestHandler;
 
     public NettyRpcServerHandler() {
         this.rpcRequestHandler = SingletonFactory.getInstance(RpcRequestHandler.class);
@@ -51,6 +51,7 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 } else {
                     RpcRequest rpcRequest = (RpcRequest) ((RpcMessage) msg).getData();
                     // Execute the target method (the method the client needs to execute) and return the method result
+                    // 通过反射调用执行方法
                     Object result = rpcRequestHandler.handle(rpcRequest);
                     log.info(String.format("server get result: %s", result.toString()));
                     rpcMessage.setMessageType(RpcConstants.RESPONSE_TYPE);
@@ -71,6 +72,8 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
+
+    // 不活跃关闭
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {

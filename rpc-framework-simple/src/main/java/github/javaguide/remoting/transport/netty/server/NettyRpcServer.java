@@ -4,7 +4,7 @@ import github.javaguide.config.CustomShutdownHook;
 import github.javaguide.config.RpcServiceConfig;
 import github.javaguide.factory.SingletonFactory;
 import github.javaguide.provider.ServiceProvider;
-import github.javaguide.provider.impl.ZkServiceProviderImpl;
+import github.javaguide.provider.impl.ServiceProviderImpl;
 import github.javaguide.remoting.transport.netty.codec.RpcMessageDecoder;
 import github.javaguide.remoting.transport.netty.codec.RpcMessageEncoder;
 import github.javaguide.utils.RuntimeUtil;
@@ -42,7 +42,7 @@ public class NettyRpcServer {
 
     public static final int PORT = 9998;
 
-    private final ServiceProvider serviceProvider = SingletonFactory.getInstance(ZkServiceProviderImpl.class);
+    private final ServiceProvider serviceProvider = SingletonFactory.getInstance(ServiceProviderImpl.class);
 
     public void registerService(RpcServiceConfig rpcServiceConfig) {
         serviceProvider.publishService(rpcServiceConfig);
@@ -50,10 +50,13 @@ public class NettyRpcServer {
 
     @SneakyThrows
     public void start() {
+        // 注册钩子
         CustomShutdownHook.getCustomShutdownHook().clearAll();
+        // 获取本地主机
         String host = InetAddress.getLocalHost().getHostAddress();
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        // 服务处理的线程池
         DefaultEventExecutorGroup serviceHandlerGroup = new DefaultEventExecutorGroup(
                 RuntimeUtil.cpus() * 2,
                 ThreadPoolFactoryUtil.createThreadFactory("service-handler-group", false)
@@ -76,8 +79,11 @@ public class NettyRpcServer {
                             // 30 秒之内没有收到客户端请求的话就关闭连接
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS));
+                            // 消息编码
                             p.addLast(new RpcMessageEncoder());
+                            // 消息解码
                             p.addLast(new RpcMessageDecoder());
+                            // 服务处理
                             p.addLast(serviceHandlerGroup, new NettyRpcServerHandler());
                         }
                     });

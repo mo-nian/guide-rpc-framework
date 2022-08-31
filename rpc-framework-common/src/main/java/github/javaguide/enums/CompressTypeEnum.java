@@ -25,4 +25,13 @@ public enum CompressTypeEnum {
         return null;
     }
 
+    public static byte getCodeByName(String name) {
+        for (CompressTypeEnum c : CompressTypeEnum.values()) {
+            if (c.getName().equals(name)) {
+                return c.code;
+            }
+        }
+        return CompressTypeEnum.GZIP.code;
+    }
+
 }

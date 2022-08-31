@@ -1,5 +1,6 @@
 package github.javaguide.registry.zk;
 
+import github.javaguide.config.RpcRegistryConfig;
 import github.javaguide.enums.RpcErrorMessageEnum;
 import github.javaguide.exception.RpcException;
 import github.javaguide.extension.ExtensionLoader;
@@ -8,6 +9,7 @@ import github.javaguide.registry.ServiceDiscovery;
 import github.javaguide.registry.zk.util.CuratorUtils;
 import github.javaguide.remoting.dto.RpcRequest;
 import github.javaguide.utils.CollectionUtil;
+import github.javaguide.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 
@@ -24,14 +26,20 @@ import java.util.List;
 public class ZkServiceDiscoveryImpl implements ServiceDiscovery {
     private final LoadBalance loadBalance;
 
+    private RpcRegistryConfig rpcRegistryConfig;
+
+    private String address;
+
     public ZkServiceDiscoveryImpl() {
-        this.loadBalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension("loadBalance");
+        rpcRegistryConfig = SpringUtil.getBean(RpcRegistryConfig.class);
+        this.loadBalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension(rpcRegistryConfig.getLoadBalance());
+        this.address = rpcRegistryConfig.getAddress();
     }
 
     @Override
     public InetSocketAddress lookupService(RpcRequest rpcRequest) {
         String rpcServiceName = rpcRequest.getRpcServiceName();
-        CuratorFramework zkClient = CuratorUtils.getZkClient();
+        CuratorFramework zkClient = CuratorUtils.getZkClient(address);
         List<String> serviceUrlList = CuratorUtils.getChildrenNodes(zkClient, rpcServiceName);
         if (CollectionUtil.isEmpty(serviceUrlList)) {
             throw new RpcException(RpcErrorMessageEnum.SERVICE_CAN_NOT_BE_FOUND, rpcServiceName);

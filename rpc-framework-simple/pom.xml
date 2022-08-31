@@ -41,6 +41,12 @@
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>
         </dependency>
+        <!-- nacos -->
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <version>${nacos-version}</version>
+        </dependency>
         <!-- protostuff -->
         <dependency>
             <groupId>io.protostuff</groupId>

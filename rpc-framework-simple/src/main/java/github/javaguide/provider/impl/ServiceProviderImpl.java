@@ -1,5 +1,6 @@
 package github.javaguide.provider.impl;
 
+import github.javaguide.config.RpcRegistryConfig;
 import github.javaguide.config.RpcServiceConfig;
 import github.javaguide.enums.RpcErrorMessageEnum;
 import github.javaguide.exception.RpcException;
@@ -7,6 +8,7 @@ import github.javaguide.extension.ExtensionLoader;
 import github.javaguide.provider.ServiceProvider;
 import github.javaguide.registry.ServiceRegistry;
 import github.javaguide.remoting.transport.netty.server.NettyRpcServer;
+import github.javaguide.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
@@ -21,20 +23,31 @@ import java.util.concurrent.ConcurrentHashMap;
  * @createTime 2020年05月13日 11:23:00
  */
 @Slf4j
-public class ZkServiceProviderImpl implements ServiceProvider {
+public class ServiceProviderImpl implements ServiceProvider {
 
     /**
      * key: rpc service name(interface name + version + group)
      * value: service object
+     * 服务名与服务对象的映射
      */
     private final Map<String, Object> serviceMap;
+    /**
+     * has registered service names
+     */
     private final Set<String> registeredService;
     private final ServiceRegistry serviceRegistry;
+    /**
+     * address of register center
+     */
+    private final String registerAddress;
 
-    public ZkServiceProviderImpl() {
+    public ServiceProviderImpl() {
         serviceMap = new ConcurrentHashMap<>();
         registeredService = ConcurrentHashMap.newKeySet();
-        serviceRegistry = ExtensionLoader.getExtensionLoader(ServiceRegistry.class).getExtension("zk");
+        // 服务注册
+        RpcRegistryConfig rpcRegistryConfig = SpringUtil.getBean(RpcRegistryConfig.class);
+        serviceRegistry = ExtensionLoader.getExtensionLoader(ServiceRegistry.class).getExtension(rpcRegistryConfig.getProtocol());
+        registerAddress = rpcRegistryConfig.getAddress();
     }
 
     @Override
@@ -62,7 +75,7 @@ public class ZkServiceProviderImpl implements ServiceProvider {
         try {
             String host = InetAddress.getLocalHost().getHostAddress();
             this.addService(rpcServiceConfig);
-            serviceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), new InetSocketAddress(host, NettyRpcServer.PORT));
+            serviceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), registerAddress, new InetSocketAddress(host, NettyRpcServer.PORT));
         } catch (UnknownHostException e) {
             log.error("occur exception when getHostAddress", e);
         }

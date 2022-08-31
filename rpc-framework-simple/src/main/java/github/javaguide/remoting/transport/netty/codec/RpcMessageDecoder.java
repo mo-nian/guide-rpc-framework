@@ -70,6 +70,7 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         Object decoded = super.decode(ctx, in);
         if (decoded instanceof ByteBuf) {
             ByteBuf frame = (ByteBuf) decoded;
+            // 16
             if (frame.readableBytes() >= RpcConstants.TOTAL_LENGTH) {
                 try {
                     return decodeFrame(frame);
@@ -92,9 +93,13 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         checkVersion(in);
         int fullLength = in.readInt();
         // build RpcMessage object
+        // 消息类型
         byte messageType = in.readByte();
+        // 序列化类型
         byte codecType = in.readByte();
+        // 压缩类型
         byte compressType = in.readByte();
+        // 请求id
         int requestId = in.readInt();
         RpcMessage rpcMessage = RpcMessage.builder()
                 .codec(codecType)
@@ -108,6 +113,8 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
             rpcMessage.setData(RpcConstants.PONG);
             return rpcMessage;
         }
+
+        // 获取body的字节长度
         int bodyLength = fullLength - RpcConstants.HEAD_LENGTH;
         if (bodyLength > 0) {
             byte[] bs = new byte[bodyLength];
@@ -116,16 +123,20 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
             String compressName = CompressTypeEnum.getName(compressType);
             Compress compress = ExtensionLoader.getExtensionLoader(Compress.class)
                     .getExtension(compressName);
+            // 解压
             bs = compress.decompress(bs);
             // deserialize the object
             String codecName = SerializationTypeEnum.getName(rpcMessage.getCodec());
             log.info("codec name: [{}] ", codecName);
             Serializer serializer = ExtensionLoader.getExtensionLoader(Serializer.class)
                     .getExtension(codecName);
+            // 反序列化
             if (messageType == RpcConstants.REQUEST_TYPE) {
+                // request解码
                 RpcRequest tmpValue = serializer.deserialize(bs, RpcRequest.class);
                 rpcMessage.setData(tmpValue);
             } else {
+                // response解码
                 RpcResponse tmpValue = serializer.deserialize(bs, RpcResponse.class);
                 rpcMessage.setData(tmpValue);
             }
